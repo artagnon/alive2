@@ -566,7 +566,7 @@ check_refinement(Errors &errs, const Transform &t, State &src_state,
       errs.add("Precondition is always false", false);
       return;
     }
-  
+
     vector<pair<expr, expr>> repls;
     auto vars_pre = pre_src.vars();
     for (auto &v : qvars) {
