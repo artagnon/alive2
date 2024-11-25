@@ -12,22 +12,22 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
-if (MSVC)
-  set(CMAKE_CXX_FLAGS                "/GL /EHsc /W2 /Zc:__cplusplus ${CMAKE_CXX_FLAGS}")
-  set(CMAKE_CXX_FLAGS_DEBUG          "/Od /Zi ${CMAKE_CXX_FLAGS_DEBUG}")
-  set(CMAKE_CXX_FLAGS_RELEASE        "/O2 /Oi /Oy /Zc:inline ${CMAKE_CXX_FLAGS_RELEASE}")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Oi /Zi ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-  set(CMAKE_EXE_LINKER_FLAGS         "/LTCG:INCREMENTAL ${CMAKE_EXE_LINKER_FLAGS}")
-else()
-  set(CMAKE_CXX_FLAGS                "-Wall -Werror -fPIC -fstrict-enums ${CMAKE_CXX_FLAGS}")
-  set(CMAKE_CXX_FLAGS_DEBUG          "-g -Og ${CMAKE_CXX_FLAGS_DEBUG}")
-  set(CMAKE_CXX_FLAGS_RELEASE        "-O3 ${CMAKE_CXX_FLAGS_RELEASE}")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -g ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-endif()
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (MSVC)
+  set(CMAKE_CXX_FLAGS                "/GL /EHsc /W2 /Zc:__cplusplus")
+  set(CMAKE_CXX_FLAGS_DEBUG          "/Od /Zi")
+  set(CMAKE_CXX_FLAGS_RELEASE        "/O2 /Oi /Oy /Zc:inline")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Oi /Zi")
+  set(CMAKE_EXE_LINKER_FLAGS         "/LTCG:INCREMENTAL")
+else()
+  set(CMAKE_CXX_FLAGS                "-Wall -fPIC -fstrict-enums")
+  set(CMAKE_CXX_FLAGS_DEBUG          "-g -Og")
+  set(CMAKE_CXX_FLAGS_RELEASE        "-O3")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -g")
+endif()
 
 macro(remove_flags)
   foreach(var ${ARGN})
@@ -171,20 +171,16 @@ endif()
 
 
 if (BUILD_LLVM_UTILS OR BUILD_TV)
-  find_package(LLVM REQUIRED CONFIG)
-
-  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-  message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-  message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/llvm/llvm/cmake/modules")
+  include(HandleLLVMOptions)
+  include(AddLLVM)
 
   if (NOT LLVM_ENABLE_RTTI)
     message(FATAL_ERROR "LLVM must be built with '-DLLVM_ENABLE_RTTI=ON'")
   endif()
 
-  list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
-  include(AddLLVM)
-
-  include_directories(${LLVM_INCLUDE_DIRS})
+  include_directories("${CMAKE_SOURCE_DIR}/llvm/llvm/include"
+                      "${CMAKE_BINARY_DIR}/llvm/llvm/include")
   add_definitions(${LLVM_DEFINITIONS})
 
   set(LLVM_UTIL_SRCS
@@ -274,7 +270,7 @@ if (NOT DEFINED TEST_NTHREADS)
     set(TEST_NTHREADS 1)
   endif()
 endif()
-add_custom_target("check"
+add_custom_target("check-alive"
                   COMMAND "python3"
                           "${PROJECT_SOURCE_DIR}/tests/lit/lit.py"
                           "-s"
@@ -285,7 +281,7 @@ add_custom_target("check"
                  )
 
 if (BUILD_TV)
-  add_dependencies("check" "alive-tv" "quick-fuzz" "tv")
+  add_dependencies("check-alive" "alive-tv" "quick-fuzz" "tv")
 endif()
 
 # EXTERNAL_PROJECTS option that works analogous to LLVM's LLVM_EXTERNAL_PROJECTS option
