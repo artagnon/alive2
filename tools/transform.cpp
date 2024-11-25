@@ -949,7 +949,9 @@ static uint64_t aligned_alloc_size(uint64_t size, uint64_t align) {
   return add_saturate(size, align - 1);
 }
 
-static void calculateAndInitConstants(Transform &t) {
+namespace tools {
+
+void calculateAndInitConstants(Transform &t) {
   if (!bits_program_pointer)
     initBitsProgramPointer(t);
 
@@ -1335,9 +1337,6 @@ static void calculateAndInitConstants(Transform &t) {
                   << "\nhas_ptr_arg: " << has_ptr_arg
                   << '\n';
 }
-
-
-namespace tools {
 
 TransformVerify::TransformVerify(Transform &t, bool check_each_var)
   : t(t), check_each_var(check_each_var) {
@@ -1887,4 +1886,4 @@ ostream& operator<<(ostream &os, const Transform &t) {
   return os;
 }
 
-}
+} // namespace tools
